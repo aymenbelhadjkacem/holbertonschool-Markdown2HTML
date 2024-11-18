@@ -1,28 +1,46 @@
-#!/usr/bin/env python3
-"""
-Script to convert Markdown to HTML.
-Takes two arguments:
-1. Name of the Markdown file (input)
-2. Name of the HTML file (output)
-"""
-
-import re
-import hashlib
+#!/usr/bin/python3
+"""Write a script markdown2html.py that takes an argument 2 strings:"""
 import sys
-import os
+
+def convert_heading(line):
+    if line.startswith("#"):
+        heading_level = min(line.count("#"), 6)
+        heading_text = line.strip("# ").strip()
+        html_heading = f"<h{heading_level}>{heading_text}</h{heading_level}>"
+        return html_heading
+    else:
+        return line
+def convert_unordered_list(line):
+    if line.startswith("- ") and not line.startswith("# "):
+        list_item = line.strip("- ").strip()
+        html_list_item = f"<li>{list_item}</li>"
+        return html_list_item
+    else:
+        return line
 
 
-def convert_line_to_html(line, list_status):
-    """Converts a single line of Markdown to HTML."""
-    # Bold and italic replacements
-    line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
-    line = re.sub(r'__(.*?)__', r'<em>\1</em>', line)
+def markdown_file(name, output):
+    try:
+        with open(name, 'r') as file:
+            markdown_lines = file.readlines()
 
-    # Replace [[text]] with md5 hash of 'text'
-    line = re.sub(r'\[\[(.+?)\]\]', lambda m: hashlib.md5(m.group(1).encode()).hexdigest(), line)
+        converted_lines = []
+        for line in markdown_lines:
+            converted_line = convert_heading(line)
+            converted_line = convert_unordered_list(converted_line)
+            converted_lines.append(converted_line)
 
-    # Remove 'C' or 'c' from ((text))
-    line = re.sub(r'\(\((.+?)\)\)', lambda m: ''.join(c for c in m.group(1) if c.lower() != 'c'), line)
+        with open(output, 'w') as file:
+            for line in converted_lines:
+                file.write(line)
 
-    # Handle headings
-    heading_match = re.match(r
+    except FileNotFoundError:
+        sys.stderr.write(f"Missing {name}\n")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        sys.stderr.write("Usage: ./markdown2html.py README.md README.html\n")
+        sys.exit(1)
+
+    markdown_file(sys.argv[1], sys.argv[2])
